@@ -6,21 +6,79 @@
   <title>Smart Red & Blue Calculator</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
-    body { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #0d47a1, #d50000); }
-    .calculator { width: 320px; background: rgba(255,255,255,0.1); backdrop-filter: blur(12px); border-radius: 25px; box-shadow: 0 8px 40px rgba(0,0,0,0.4); padding: 20px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease; }
-    .display { width: 100%; height: 80px; background: rgba(255,255,255,0.15); border-radius: 15px; color: #fff; font-size: 2rem; text-align: right; padding: 15px; margin-bottom: 15px; overflow-x: auto; }
+    body {
+      height: 100vh; display: flex; justify-content: center; align-items: center;
+      background: linear-gradient(135deg, #0d47a1, #d50000); overflow: hidden;
+    }
+    .calculator {
+      width: 320px; background: rgba(255,255,255,0.1); backdrop-filter: blur(12px);
+      border-radius: 25px; box-shadow: 0 8px 40px rgba(0,0,0,0.4); padding: 20px;
+      border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease;
+    }
+    .display {
+      width: 100%; height: 80px; background: rgba(255,255,255,0.15); border-radius: 15px;
+      color: #fff; font-size: 2rem; text-align: right; padding: 15px; margin-bottom: 15px; overflow-x: auto;
+    }
     .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    button { height: 60px; border: none; border-radius: 15px; font-size: 1.2rem; color: #fff; cursor: pointer; background: linear-gradient(145deg, rgba(13,71,161,0.4), rgba(213,0,0,0.4)); box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.2s ease; }
-    button:hover { background: linear-gradient(145deg, rgba(13,71,161,0.6), rgba(213,0,0,0.6)); transform: translateY(-3px); }
+    button {
+      height: 60px; border: none; border-radius: 15px; font-size: 1.2rem;
+      color: #fff; cursor: pointer;
+      background: linear-gradient(145deg, rgba(13,71,161,0.4), rgba(213,0,0,0.4));
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.2s ease;
+    }
+    button:hover {
+      background: linear-gradient(145deg, rgba(13,71,161,0.6), rgba(213,0,0,0.6));
+      transform: translateY(-3px);
+    }
     .operator { background: linear-gradient(145deg, rgba(255,87,34,0.6), rgba(33,150,243,0.6)); color: #ffeb3b; font-weight: 600; }
     .equal { background: linear-gradient(145deg, #00e676, #1de9b6); color: #000; font-weight: 700; }
     .clear { background: linear-gradient(145deg, #f44336, #d32f2f); }
     .message { text-align: center; color: #fff; font-weight: bold; margin-top: 15px; font-size: 1rem; }
-    @media (max-width: 400px) { .calculator { width: 90%; } button { height: 55px; font-size: 1rem; } }
+
+    @media (max-width: 400px) {
+      .calculator { width: 90%; }
+      button { height: 55px; font-size: 1rem; }
+    }
+
+    iframe { width: 100%; height: 100vh; border: none; }
+
+    /* Loader */
+    .loader {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #000;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      z-index: 999; color: white;
+    }
+    .spinner {
+      border: 6px solid rgba(255,255,255,0.2); border-top: 6px solid #fff; border-radius: 50%;
+      width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 15px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .loader-text { font-size: 1.2rem; letter-spacing: 1px; animation: fade 1.5s infinite alternate; }
+    @keyframes fade { from { opacity: 0.6; } to { opacity: 1; } }
+
+    /* Secret code list */
+    .code-list {
+      color: white;
+      padding: 20px;
+      text-align: center;
+      background: black;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .code-list h2 {
+      color: #00e676;
+      margin-bottom: 15px;
+    }
+    .code-list p {
+      font-size: 1rem;
+      line-height: 1.6;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 5px 0;
+    }
   </style>
 </head>
 <body>
-  <div class="calculator">
+  <div class="calculator" id="calculator">
     <div class="display" id="display">0</div>
     <div class="buttons">
       <button class="clear" onclick="clearDisplay()">C</button>
@@ -53,56 +111,101 @@
   <script>
     const display = document.getElementById("display");
     const message = document.getElementById("message");
+    let siteOpen = false;
 
     function append(value) {
-      if (display.innerText === "0") {
-        display.innerText = value;
-      } else {
-        display.innerText += value;
-      }
+      if (display.innerText === "0") display.innerText = value;
+      else display.innerText += value;
     }
-
-    function clearDisplay() {
-      display.innerText = "0";
-      message.innerText = "";
-    }
-
-    function deleteChar() {
-      display.innerText = display.innerText.slice(0, -1) || "0";
-    }
+    function clearDisplay() { display.innerText = "0"; message.innerText = ""; }
+    function deleteChar() { display.innerText = display.innerText.slice(0, -1) || "0"; }
 
     function calculate() {
       try {
-        const input = display.innerText.replace("÷", "/").replace("×", "*");
-        const result = eval(input);
+        const input = display.innerText.trim();
+        const mathExpr = input.replace("÷", "/").replace("×", "*");
+        const result = eval(mathExpr);
         display.innerText = result;
 
-        // Secret Code Checks
-        if (input === "555-7") {
-          openOnlineSite("https://mdgcal.vercel.app");
-        } else if (input === "555-6") {
-          openOnlineSite("https://mdg2cal.vercel.app");
-        }else if (input === "555-5") {
-          openOnlineSite("https://mdg3cal.vercel.app");
-        }else if (input === "555-4") {
-          openOnlineSite("https://flappybird.io");
-        }else if (input === "555-3") {
-          openOnlineSite("https://poki.com");
-        }else if (input === "555-2") {
-          openOnlineSite("https://clicktheredbutton.com");
+        // Secret Codes
+        if (input === "555-0") showCodeList();
+        else if (input === "555-7") openOnlineSite("https://mdgcal.vercel.app");
+        else if (input === "555-6") openOnlineSite("https://mdg2cal.vercel.app");
+        else if (input === "555-5") openOnlineSite("https://mdg3cal.vercel.app");
+        else if (input === "555-4") openOnlineSite("https://flappybird.io");
+        else if (input === "555-3") openOnlineSite("https://poki.com");
+        else if (input === "555-2") openOnlineSite("https://clicktheredbutton.com");
+        else if (input === "555-1") openOnlineSite("https://pranx.com");
+        else if (input === "777-1") openOnlineSite("https://chat.openai.com");
+        else if (input === "777-2") openOnlineSite("https://gemini.google.com");
+        else if (input === "777-3") openOnlineSite("https://bing.com/chat");
+        else if (input === "777-4") openOnlineSite("https://poe.com");
+        else if (input === "888-1") openOnlineSite("https://krunker.io");
+        else if (input === "888-2") openOnlineSite("https://slowroads.io");
+        else if (input === "888-3") openOnlineSite("https://littlealchemy2.com");
+        else if (input === "888-4") openOnlineSite("https://paper-io.com");
+        else if (input === "888-5") openOnlineSite("https://smashkarts.io");
+        else if (input === "888-6") openOnlineSite("https://shellshock.io");
+        else if (input === "888-7") openOnlineSite("https://mariohtml5.com");
+        else if (input === "888-8") openOnlineSite("https://minesweeperonline.com");
+        else if (input.includes(".")) {
+          let url = input.startsWith("http") ? input : "https://" + input;
+          openOnlineSite(url);
         }
+
       } catch {
         display.innerText = "Error";
       }
     }
 
+    function showCodeList() {
+      siteOpen = true;
+      history.pushState({ page: "list" }, "", "#list");
+      document.body.innerHTML = `
+        <div class="code-list">
+          <h2>🔐 Secret Code List</h2>
+          <p><b>555-7</b> → MDG Cal</p>
+          <p><b>555-6</b> → MDG2 Cal</p>
+          <p><b>555-5</b> → MDG3 Cal</p>
+          <p><b>555-4</b> → Flappy Bird</p>
+          <p><b>555-3</b> → Poki Games</p>
+          <p><b>555-2</b> → Click The Red Button</p>
+          <p><b>555-1</b> → Pranx (Fun Site)</p>
+          <p><b>777-1</b> → ChatGPT</p>
+          <p><b>777-2</b> → Gemini AI</p>
+          <p><b>777-3</b> → Bing Copilot</p>
+          <p><b>777-4</b> → Poe AI</p>
+          <p><b>888-1</b> → Krunker.io</p>
+          <p><b>888-2</b> → Slowroads.io</p>
+          <p><b>888-3</b> → Little Alchemy 2</p>
+          <p><b>888-4</b> → Paper.io</p>
+          <p><b>888-5</b> → Smash Karts</p>
+          <p><b>888-6</b> → Shell Shockers</p>
+          <p><b>888-7</b> → Mario HTML5</p>
+          <p><b>888-8</b> → Minesweeper</p>
+          <p style="color:#00e676;margin-top:10px;">Press your phone’s back button to return.</p>
+        </div>`;
+    }
+
     function openOnlineSite(url) {
       if (navigator.onLine) {
-        window.location.href = url;
-      } else {
-        message.innerText = "⚠️ No Internet Connection!";
-      }
+        siteOpen = true;
+        history.pushState({ page: "site" }, "", "#site");
+        document.body.innerHTML = `
+          <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <div class="loader-text">Loading...</div>
+          </div>
+          <iframe src="${url}" id="webframe"></iframe>
+        `;
+        const iframe = document.getElementById("webframe");
+        iframe.onload = () => { document.getElementById("loader").style.display = "none"; };
+      } else message.innerText = "⚠️ No Internet Connection!";
     }
+
+    window.onpopstate = function () {
+      if (siteOpen) { siteOpen = false; location.reload(); }
+    };
   </script>
 </body>
 </html>
