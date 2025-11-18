@@ -143,7 +143,7 @@ function calculate(){
     if(codes[input]==="secret"){ document.getElementById("secretMenu").style.display="block"; input="0"; display.innerText="0"; return; }
     openWebsite(codes[input]); input="0"; display.innerText="0"; return;
   }
-  try{ display.innerText = eval(input.replace("×","×").replace("÷","÷")); input=display.innerText; } 
+  try{ display.innerText = eval(input.replace("*","×").replace("/","÷")); input=display.innerText; } 
   catch{ display.innerText="Error"; showStatus("Error"); input="0"; }
 }
 
